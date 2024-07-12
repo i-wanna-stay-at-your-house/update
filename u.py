@@ -37,11 +37,6 @@ def gpt_call(text, selected_language):
     )
     return response.choices[0].message['content']
 
-# TTS 부분을 주석 처리하거나 다른 방식으로 구현해야 합니다.
-def text_to_speech(client, text):
-    # Implement TTS functionality if available
-    pass
-
 # 이미지 Base64 인코딩
 def get_base64_of_bin_file(bin_file):
     with open(bin_file, 'rb') as f:
@@ -67,14 +62,20 @@ else:
         font-weight: bold;
         color: #f7e600;
     }}
-    .stButton>button {{
-        background-color : black; !important;
-        color: red !important;
-        width : auto !important;
-    }}
     .stTextInput>div>input {{
         background-color: lightblue !important;
         color: black !important;
+    }}
+    .stSelectbox>div {{
+        border-radius : 15px !important;
+    }}
+    .stSelectbox>div:hover {{
+        background-color: lightblue !important;
+    }}
+    .stSelectbox>div>select {{
+        background-color: lightblue !important;
+        color: black !important;
+        border: 2px solid black !important;
     }}
     .card {{
         background: white !important;
@@ -98,6 +99,21 @@ else:
         color: blue !important;
     }}
     </style>
+    <script>
+    // JavaScript to add hover functionality for select box
+    document.addEventListener('DOMContentLoaded', function() {{
+        var selectBox = document.querySelector('.stSelectbox div');
+        selectBox.addEventListener('mouseover', function() {{
+            var selectElement = this.querySelector('select');
+            var event = new MouseEvent('mousedown', {{
+                view: window,
+                bubbles: true,
+                cancelable: true
+            }});
+            selectElement.dispatchEvent(event);
+        }});
+    }});
+    </script>
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="title">Streamlit Audio Translator</div>', unsafe_allow_html=True)
