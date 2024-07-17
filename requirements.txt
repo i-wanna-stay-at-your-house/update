@@ -1,0 +1,7 @@
+streamlit
+streamlit-mic-recorder
+openai-whisper
+soundfile
+av
+numpy
+openai
