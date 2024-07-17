@@ -28,15 +28,14 @@ def transcribe_audio(file_path):
     return result['text']
 
 def gpt_call(text, selected_language):
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=f"Translate the following text to {selected_language}:\n{text}",
-        max_tokens=1024,
-        n=1,
-        stop=None,
-        temperature=0.7,
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": f"Translate the following text to {selected_language}."},
+            {"role": "user", "content": text}
+        ]
     )
-    return response.choices[0].text.strip()
+    return response.choices[0].message['content']
 
 # 이미지 Base64 인코딩
 def get_base64_of_bin_file(bin_file):
