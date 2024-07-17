@@ -6,7 +6,6 @@ import openai
 import os
 import warnings
 import base64
-#깃허브 업데이트?
 
 # Suppress FP16 warning
 warnings.filterwarnings("ignore", message="FP16 is not supported on CPU; using FP32 instead")
@@ -29,14 +28,15 @@ def transcribe_audio(file_path):
     return result['text']
 
 def gpt_call(text, selected_language):
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": f"Translate the following text to {selected_language}. If the text contains multiple languages, translate them accordingly."},
-            {"role": "user", "content": text}
-        ]
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=f"Translate the following text to {selected_language}:\n{text}",
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        temperature=0.7,
     )
-    return response.choices[0].message['content']
+    return response.choices[0].text.strip()
 
 # 이미지 Base64 인코딩
 def get_base64_of_bin_file(bin_file):
