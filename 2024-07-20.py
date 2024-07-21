@@ -8,6 +8,7 @@ import warnings
 from pydub import AudioSegment
 import subprocess
 import time
+import platform
 
 # ffmpeg 경로 찾기 함수
 def find_ffmpeg():
