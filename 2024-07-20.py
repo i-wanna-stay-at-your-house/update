@@ -6,7 +6,23 @@ import openai
 import os
 import warnings
 from pydub import AudioSegment
+import subprocess
 import time
+
+# ffmpeg 경로 찾기 함수
+def find_ffmpeg():
+    try:
+        ffmpeg_path = subprocess.check_output(['where', 'ffmpeg']).decode().strip().split('\r\n')[0]
+        return ffmpeg_path
+    except subprocess.CalledProcessError:
+        return None
+
+# ffmpeg 경로 설정
+ffmpeg_path = find_ffmpeg()
+if ffmpeg_path:
+    AudioSegment.ffmpeg = ffmpeg_path
+else:
+    st.error("ffmpeg 경로를 찾을 수 없습니다. ffmpeg가 설치되어 있는지 확인하세요.")
 
 # Suppress FP16 warning
 warnings.filterwarnings("ignore", message="FP16 is not supported on CPU; using FP32 instead")
@@ -48,9 +64,6 @@ def delete_messages(id):
         message_id = message.id
         deleted_message_response = client.beta.threads.messages.delete(thread_id=id, message_id=message_id)
 
-
-
-
 # Initialize openai assistent
 if 'vector_store_id' not in st.session_state:
     st.session_state.vector_store_id = "vs_bHT7TcS6HrVHAYcNgeh48lKE"
@@ -74,7 +87,6 @@ if 'uploader_list' not in st.session_state:
 
 def state_uploader():
     st.session_state.uploader = True
-    
 
 # Initialize session state lists
 if 'transcriptions' not in st.session_state:
@@ -85,6 +97,8 @@ if 'ts_texts' not in st.session_state:
     st.session_state.ts_texts = []
 if 'tts_audio_data' not in st.session_state:
     st.session_state.tts_audio_data = []
+if 'retranslated_tts_audio_data' not in st.session_state:
+    st.session_state.retranslated_tts_audio_data = []
 
 if 'is_recording' not in st.session_state:
     st.session_state.is_recording = False
@@ -97,7 +111,6 @@ if 'temp_page' not in st.session_state:
 
 if 'is_re_recording' not in st.session_state:
     st.session_state.is_re_recording = False
-
 
 def transcribe_audio(file_path):
     result = model.transcribe(file_path, language='ko')
@@ -171,16 +184,16 @@ def delete_files(i):
     del st.session_state.file_paths[i]
     del st.session_state.ts_texts[i]
     del st.session_state.tts_audio_data[i]
+    del st.session_state.retranslated_tts_audio_data[i]
 
 def state_recode():
     st.session_state.is_recording = True
 
 def state_re_recode():
     st.session_state.is_recording = True
-    st.session_state.temp_page-=1
+    st.session_state.temp_page -= 1
     delete_files(st.session_state.temp_page)
     st.session_state.is_re_recording = True
-
 
 def merge_audios_with_silence(audio_files, silence_duration=700):
     combined = AudioSegment.empty()
@@ -188,8 +201,6 @@ def merge_audios_with_silence(audio_files, silence_duration=700):
     for audio_file in audio_files:
         combined += AudioSegment.from_file(audio_file) + silence
     return combined
-
-
 
 # Streamlit interface
 st.title("Streamlit Audio Translator")
@@ -201,17 +212,16 @@ languages = ['한국어', 'English', '中文', '日本語', 'Tiếng Việt', '�
 
 tones = ['Default', 'Politely and Academically']
 
-
 col1_tone, col2_file_uploader = st.columns([1, 1])
 with col1_tone:
-    selected_tone = st.radio(label="Tone", options=tones, index=0, horizontal = True)
+    selected_tone = st.radio(label="Tone", options=tones, index=0, horizontal=True)
     use_rag = st.toggle("Using RAG")
     
 if use_rag:   
     with col2_file_uploader:
-        uploaded_files= st.file_uploader("Upload File", type = ['txt', 'doc', 'docx', 'pdf', 'pptx'], accept_multiple_files=True, on_change = state_uploader)
+        uploaded_files = st.file_uploader("Upload File", type=['txt', 'doc', 'docx', 'pdf', 'pptx'], accept_multiple_files=True, on_change=state_uploader)
 
-        if st.session_state.uploader and len(uploaded_files)>len(st.session_state.uploader_list):
+        if st.session_state.uploader and len(uploaded_files) > len(st.session_state.uploader_list):
 
             st.session_state.uploader = False
             st.session_state.uploader_list = uploaded_files
@@ -236,8 +246,7 @@ if use_rag:
                     st.write(f"파일 업로드 완료: {uploaded_file.name}")
                     st.write(response)
 
-
-                    file_id=response.id
+                    file_id = response.id
 
                     # 벡터 스토어에 파일 업로드
                     try:
@@ -297,7 +306,6 @@ if use_rag:
                 st.write(f"파일 삭제 중 오류가 발생했습니다: {unique_to_list[0].name}")
                 st.write(e)
 
-
 # 언어 선택 박스 (기본값을 영어로 설정)
 selected_language = st.selectbox('Language', languages, index=1)
 
@@ -345,13 +353,14 @@ if st.session_state.is_recording == True:
     progress_bar.progress(100)
 
     # Append results to session state lists
-    st.session_state.transcriptions.insert(st.session_state.temp_page,transcription)
-    st.session_state.file_paths.insert(st.session_state.temp_page,st.session_state.file_path)
-    st.session_state.ts_texts.insert(st.session_state.temp_page,ts_text)
-    st.session_state.tts_audio_data.insert(st.session_state.temp_page,tts_audio)
+    st.session_state.transcriptions.insert(st.session_state.temp_page, transcription)
+    st.session_state.file_paths.insert(st.session_state.temp_page, st.session_state.file_path)
+    st.session_state.ts_texts.insert(st.session_state.temp_page, ts_text)
+    st.session_state.tts_audio_data.insert(st.session_state.temp_page, tts_audio)
+    st.session_state.retranslated_tts_audio_data.insert(st.session_state.temp_page, tts_audio)
 
     #temp_Page
-    st.session_state.temp_page+=1
+    st.session_state.temp_page += 1
 
     st.session_state.is_recording = False
     st.rerun()
@@ -360,11 +369,10 @@ st.sidebar.title("Recordings")
 
 if st.session_state.once_recording == True and st.session_state.transcriptions:
 
-
     for i in range(len(st.session_state.transcriptions)):
         button_label = f"R{i+1}: {st.session_state.transcriptions[i][:11]}"
-        if len(st.session_state.transcriptions[i])>11:
-            button_label+=".."
+        if len(st.session_state.transcriptions[i]) > 11:
+            button_label += ".."
         if st.sidebar.button(button_label):
             st.session_state.temp_page = i+1
             st.rerun()
@@ -399,13 +407,12 @@ if st.session_state.once_recording == True and st.session_state.transcriptions:
 
                       # 다운로드 버튼 추가
                     st.download_button(
-                       label="Download Full Audio",
-                       data=audio_bytes,
-                       file_name="merged_audio.mp3",
-                       mime="audio/mp3",
-                       type="primary"
-                     )
-
+                        label="Download Full Audio",
+                        data=audio_bytes,
+                        file_name="merged_audio.mp3",
+                        mime="audio/mp3",
+                        type="primary"
+                    )
 
                 excluded_list = [j+1 for j in range(len(st.session_state.transcriptions)) if j != i]
 
@@ -438,15 +445,34 @@ if st.session_state.once_recording == True and st.session_state.transcriptions:
                         st.session_state.file_paths.insert(change_option, st.session_state.file_paths.pop(i))
                         st.session_state.ts_texts.insert(change_option, st.session_state.ts_texts.pop(i))
                         st.session_state.tts_audio_data.insert(change_option, st.session_state.tts_audio_data.pop(i))
+                        st.session_state.retranslated_tts_audio_data.insert(change_option, st.session_state.retranslated_tts_audio_data.pop(i))
                         st.session_state.temp_page = change_option + 1
-                        st.rerun()                    
+                        st.rerun()
 
+# 오른쪽 밑에 Transcriptions 리스트를 줄바꿈하여 한 번에 볼 수 있는 버튼 추가
+if st.session_state.transcriptions:
+    with st.expander("View All Transcriptions", expanded=False):
+        transcriptions_text = "\n\n".join(st.session_state.transcriptions)
+        st.text_area("All Transcriptions", value=transcriptions_text, height=200)
 
-      
+        # 개별 transcription에 대해 재번역할 수 있는 기능 추가
+        for i, transcription in enumerate(st.session_state.transcriptions):
+            selected_language_retranslate = st.selectbox(f'Retranslate R{i+1}', languages, key=f'retranslate_{i}')
+            if st.button(f'Translate R{i+1}', key=f'translate_button_{i}'):
+                with st.spinner(f'Translating R{i+1} to {selected_language_retranslate}...'):
+                    if use_rag:
+                        retranslated_text = gpt_call(client, transcription, selected_language_retranslate, selected_tone)
+                    else:
+                        retranslated_text = translator_call(client, transcription, selected_language_retranslate, selected_tone)
+                    
+                    retranslated_tts_audio = text_to_speech(client, retranslated_text)
+                    st.session_state.retranslated_tts_audio_data[i] = retranslated_tts_audio
 
-    # Delete temporary files if needed
-    #os.remove(st.session_state.file_paths[-1])
-    #os.remove(st.session_state.tts_audio_data[-1])
+                    st.session_state.ts_texts[i] = retranslated_text
+                    st.write(f'Retranslated R{i+1} to {selected_language_retranslate}:')
+                    st.write(retranslated_text)
+                    st.audio(retranslated_tts_audio, format='audio/mp3', autoplay=True)
+
 # 하단 고정 텍스트와 스타일 조정
 st.markdown(
     """
@@ -471,8 +497,8 @@ st.markdown(
         background-color: #A67676; /* 원하는 색상 코드로 변경 */
     }
     section[data-testid="stSidebar"] {
-            width: 150px !important; # Set the width to your desired value
-        }
+        width: 150px !important; # Set the width to your desired value
+    }
     </style>
     <div class="footer">
         Digital Wellness Lab 2024<br>
