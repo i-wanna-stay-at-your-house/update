@@ -33,7 +33,7 @@ st.markdown(
     }
     .footer-content {
         position: relative;
-        right: 100px; /* 왼쪽으로 20px 이동 */
+        right: 150px; /* 왼쪽으로 20px 이동 */
     }
     .stApp {
         background-color: #A67676; /* 원하는 색상 코드로 변경 */
