@@ -8,15 +8,58 @@ import warnings
 from pydub import AudioSegment
 import subprocess
 import time
-import platform
+
+# 하단 고정 텍스트와 스타일 조정
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Futura:wght@300;400;700&display=swap');
+
+    .footer {
+        position: fixed;
+        left : 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #734954;
+        color: #F2F2F2;
+        text-align: right;
+        padding-right : 300px;
+        padding: 10px;
+        border-top: 1px solid #F2F2F2;
+        font-family: 'Futura', sans-serif; /* 폰트 패밀리 변경 */
+        font-size: 12px; /* 폰트 크기 변경 */
+        font-style: italic; /* 폰트 스타일 변경 */
+        z-index: 1000; /* Always on top */
+    }
+    .footer-content {
+        position: relative;
+        right: 100px; /* 왼쪽으로 20px 이동 */
+    }
+    .stApp {
+        background-color: #A67676; /* 원하는 색상 코드로 변경 */
+        padding-bottom: 200px; /* footer 높이에 맞게 여유 공간 설정 */
+    }
+    section[data-testid="stSidebar"] {
+        width: 150px !important; # Set the width to your desired value
+    }
+    </style>
+    <div class="footer">
+        <div class = "footer-content">
+            Digital Wellness Lab 2024<br>
+            Business Analytics, School of Management<br>
+            Kyung Hee University<br>
+            Maintained by H-.M-. Kim & S-.W-. Kim
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # ffmpeg 경로 찾기 함수
 def find_ffmpeg():
     try:
-        if platform.system() == "Windows":
-            ffmpeg_path = subprocess.check_output(['where', 'ffmpeg']).decode().strip().split('\r\n')[0]
-        else:
-            ffmpeg_path = subprocess.check_output(['which', 'ffmpeg']).decode().strip().split('\n')[0]
+        ffmpeg_path = subprocess.check_output(['where', 'ffmpeg']).decode().strip().split('\r\n')[0]
         return ffmpeg_path
     except subprocess.CalledProcessError:
         return None
@@ -206,11 +249,14 @@ def merge_audios_with_silence(audio_files, silence_duration=700):
         combined += AudioSegment.from_file(audio_file) + silence
     return combined
 
+def none_fuc():
+    time.sleep(0.3)
+    
 # Streamlit interface
 st.title("Streamlit Audio Translator")
 
 st.write("Select the language of the translation result and click Start!")
-st.text_area("Write your notes here:", height=200)
+st.text_area("Write your notes here:", height=200, on_change =none_fuc)
 # 선택할 수 있는 언어 목록
 languages = ['한국어', 'English', '中文', '日本語', 'Tiếng Việt', 'हिन्दी']
 
@@ -476,40 +522,3 @@ if st.session_state.transcriptions:
                     st.write(f'Retranslated R{i+1} to {selected_language_retranslate}:')
                     st.write(retranslated_text)
                     st.audio(retranslated_tts_audio, format='audio/mp3', autoplay=True)
-
-# 하단 고정 텍스트와 스타일 조정
-st.markdown(
-    """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Futura:wght@300;400;700&display=swap');
-
-    .footer {
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        background-color: #734954;
-        color: #F2F2F2;
-        text-align: right;
-        padding: 10px;
-        border-top: 1px solid #F2F2F2;
-        font-family: 'Futura', sans-serif; /* 폰트 패밀리 변경 */
-        font-size: 12px; /* 폰트 크기 변경 */
-        font-style: italic; /* 폰트 스타일 변경 */
-    }
-    .stApp {
-        background-color: #A67676; /* 원하는 색상 코드로 변경 */
-    }
-    section[data-testid="stSidebar"] {
-        width: 150px !important; # Set the width to your desired value
-    }
-    </style>
-    <div class="footer">
-        Digital Wellness Lab 2024<br>
-        Business Analytics, School of Management<br>
-        Kyung Hee University<br>
-        Maintained by H-.M-. Kim & S-.W-. Kim
-    </div>
-    """,
-    unsafe_allow_html=True
-)
