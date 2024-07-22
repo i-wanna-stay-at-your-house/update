@@ -8,6 +8,7 @@ import warnings
 from pydub import AudioSegment
 import subprocess
 import time
+import platform
 
 # 하단 고정 텍스트와 스타일 조정
 st.markdown(
@@ -17,13 +18,12 @@ st.markdown(
 
     .footer {
         position: fixed;
-        left : 0;
+        left: 0;
         bottom: 0;
         width: 100%;
         background-color: #734954;
         color: #F2F2F2;
         text-align: right;
-        padding-right : 300px;
         padding: 10px;
         border-top: 1px solid #F2F2F2;
         font-family: 'Futura', sans-serif; /* 폰트 패밀리 변경 */
@@ -33,16 +33,16 @@ st.markdown(
     }
     .footer-content {
         position: relative;
-        right: 150px; /* 왼쪽으로 20px 이동 */
+        right: 20px; /* 오른쪽으로 20px 이동 */
     }
     .stApp {
         background-color: #A67676; /* 원하는 색상 코드로 변경 */
         padding-bottom: 200px; /* footer 높이에 맞게 여유 공간 설정 */
     }
     section[data-testid="stSidebar"] {
-        width: 150px !important; # Set the width to your desired value
+        width: 150px !important; /* Set the width to your desired value */
     }
-        /* 버튼 스타일 변경 */
+    /* 버튼 스타일 변경 */
     .stButton > button {
         background-color: #734954;
         color: white;
@@ -58,7 +58,7 @@ st.markdown(
     }
     </style>
     <div class="footer">
-        <div class = "footer-content">
+        <div class="footer-content">
             Digital Wellness Lab 2024<br>
             Business Analytics, School of Management<br>
             Kyung Hee University<br>
@@ -69,11 +69,13 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 # ffmpeg 경로 찾기 함수
 def find_ffmpeg():
     try:
-        ffmpeg_path = subprocess.check_output(['which', 'ffmpeg']).decode().strip().split('\r\n')[0]
+        if platform.system() == "Windows":
+            ffmpeg_path = subprocess.check_output(['where', 'ffmpeg']).decode().strip().split('\r\n')[0]
+        else:
+            ffmpeg_path = subprocess.check_output(['which', 'ffmpeg']).decode().strip().split('\n')[0]
         return ffmpeg_path
     except subprocess.CalledProcessError:
         return None
@@ -145,6 +147,9 @@ if 'uploader' not in st.session_state:
 
 if 'uploader_list' not in st.session_state:
     st.session_state.uploader_list = []
+
+if 'uploaded_file_ids' not in st.session_state:
+    st.session_state.uploaded_file_ids = []
 
 def state_uploader():
     st.session_state.uploader = True
@@ -312,6 +317,8 @@ if use_rag:
 
                     file_id = response.id
 
+                    st.session_state.uploaded_file_ids.append(file_id)
+
                     # 벡터 스토어에 파일 업로드
                     try:
                         vector_store_response = client.beta.vector_stores.files.create(
@@ -365,6 +372,10 @@ if use_rag:
                         client.beta.vector_stores.files.delete(vector_store_id=st.session_state.vector_store_id, file_id=file.id)
                         client.files.delete(file.id)
                         st.write(f"OpenAI에서 파일 삭제: {unique_to_list[0].name}")
+
+                        # 삭제된 파일의 ID를 st.session_state.uploaded_file_ids에서도 제거
+                        if file.id in st.session_state.uploaded_file_ids:
+                            st.session_state.uploaded_file_ids.remove(file.id)
 
             except Exception as e:
                 st.write(f"파일 삭제 중 오류가 발생했습니다: {unique_to_list[0].name}")
