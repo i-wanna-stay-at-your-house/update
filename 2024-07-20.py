@@ -59,7 +59,7 @@ st.markdown(
 # ffmpeg 경로 찾기 함수
 def find_ffmpeg():
     try:
-        ffmpeg_path = subprocess.check_output(['where', 'ffmpeg']).decode().strip().split('\r\n')[0]
+        ffmpeg_path = subprocess.check_output(['which', 'ffmpeg']).decode().strip().split('\r\n')[0]
         return ffmpeg_path
     except subprocess.CalledProcessError:
         return None
