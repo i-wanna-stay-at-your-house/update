@@ -42,6 +42,20 @@ st.markdown(
     section[data-testid="stSidebar"] {
         width: 150px !important; # Set the width to your desired value
     }
+        /* 버튼 스타일 변경 */
+    .stButton > button {
+        background-color: #734954;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 20px;
+        margin: 5px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+    .stButton > button:hover {
+        background-color: #5a3d42;
+    }
     </style>
     <div class="footer">
         <div class = "footer-content">
